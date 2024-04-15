@@ -1,0 +1,102 @@
+Algorithme TrouverVariables(expression)
+    expression ← Remplacer(expression, "and", "")
+    expression ← Remplacer(expression, "xor", "")
+    expression ← Remplacer(expression, "or", "")
+    expression ← Remplacer(expression, "not", "")
+    expression ← Remplacer(expression, " ", "")
+    variables ← EnsembleVide()
+    Pour chaque caractère dans expression Faire
+        Si estLettre(caractère) Alors
+            AjouterÀ(variables, caractère)
+        Fin Si
+    Fin Pour
+    variables ← Trier(variables)
+    Retourner variables
+Fin
+
+Algorithme EvaluerExpression(expression, valeurs_variables, variables)
+    env ← DictionnaireVide()
+    Pour i ← 1 À Longueur(variables) Faire
+        env[variables[i]] ← valeurs_variables[i]
+    Fin Pour
+    expression_python ← Remplacer(expression, "and", "et")
+    expression_python ← Remplacer(expression_python, "or", "ou")
+    expression_python ← Remplacer(expression_python, "not ", "non ")
+    expression_python ← Remplacer(expression_python, "xor", "^")
+    Essayer
+        Retourner Evaluer(expression_python, {"__builtins__": None}, env)
+    Sinon
+        Afficher "Erreur lors de l'évaluation de l'expression"
+        Retourner Faux
+    Fin Essayer
+Fin
+
+Algorithme FormeSOP(variables, table_verite)
+    termes ← ListeVide()
+    Pour chaque ligne dans table_verite Faire
+        Si ligne[DernierIndice(ligne)] Alors
+            terme ← ListeVide()
+            Pour i ← 1 À Longueur(variables) Faire
+                Si ligne[i] Alors
+                    AjouterÀ(terme, "(" + variables[i] + ")")
+                Sinon
+                    AjouterÀ(terme, "(non " + variables[i] + ")")
+                Fin Si
+            Fin Pour
+            AjouterÀ(termes, "(" + Concaténer(terme, " et ") + ")")
+        Fin Si
+    Fin Pour
+    Si Longueur(termes) > 0 Alors
+        Retourner Concaténer(termes, " ou ")
+    Sinon
+        Retourner "Faux"
+    Fin Si
+Fin
+
+Algorithme FormePOS(variables, table_verite)
+    termes ← ListeVide()
+    Pour chaque ligne dans table_verite Faire
+        Si Non ligne[DernierIndice(ligne)] Alors
+            terme ← ListeVide()
+            Pour i ← 1 À Longueur(variables) Faire
+                Si Non ligne[i] Alors
+                    AjouterÀ(terme, "(" + variables[i] + ")")
+                Sinon
+                    AjouterÀ(terme, "(non " + variables[i] + ")")
+                Fin Si
+            Fin Pour
+            AjouterÀ(termes, "(" + Concaténer(terme, " ou ") + ")")
+        Fin Si
+    Fin Pour
+    Si Longueur(termes) > 0 Alors
+        Retourner Concaténer(termes, " et ")
+    Sinon
+        Retourner "Vrai"
+    Fin Si
+Fin
+
+Algorithme GenererTableVeriteEtFormesCanoniques
+    Variables
+        variables, table_verite, sop, pos : Liste de Caractères
+    Début
+        expression ← Saisir("Entrez la fonction booléenne (utilisez and, or, not, xor) : ")
+        variables ← TrouverVariables(expression)
+        Afficher " | " + Concaténer(variables, " | ") + " | Résultat"
+        table_verite ← ListeVide()
+        
+        Pour i ← 0 À 2^Longueur(variables)-1 Faire
+            valeurs_variables ← Liste()
+            Pour j ← Longueur(variables)-1 À 0 Pas -1 Faire
+                AjouterÀ(valeurs_variables, (i DiviserPar (2^j)) Modulo 2)
+            Fin Pour
+            resultat ← EvaluerExpression(expression, valeurs_variables, variables)
+            Afficher " | " + Concaténer(valeurs_variables, " | ") + " | " + résultat
+            AjouterÀ(table_verite, Concaténer(valeurs_variables, ",") + "," + résultat)
+        Fin Pour
+
+        sop ← FormeSOP(variables, table_verite)
+        pos ← FormePOS(variables, table_verite)
+        Afficher "Forme SOP (Somme de Produits) : " + sop
+        Afficher "Forme POS (Produit de Sommes) : " + pos
+    Fin
+Fin
